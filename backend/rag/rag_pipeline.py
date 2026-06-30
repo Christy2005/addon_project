@@ -7,6 +7,28 @@ from langchain_groq import ChatGroq
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 
+BLOCKED_INPUTS = [
+    "ignore previous instructions",
+    "ignore all instructions",
+    "system prompt",
+    "reveal prompt",
+    "jailbreak",
+    "act as",
+    "pretend",
+    "developer message",
+    "forget instructions"
+]
+
+BLOCKED_TOPICS = [
+    "password",
+    "api key",
+    "secret",
+    "hack",
+    "illegal",
+    "drugs",
+    "weapon"
+]
+
 load_dotenv()
 
 groq_api_key = os.getenv("GROQ_API_KEY")
@@ -104,6 +126,7 @@ def get_context_string(query, k=3):
     docs = retrieve_context(query, k)
     return "\n\n---\n\n".join(docs)
 parser = StrOutputParser()
+
 
 def answer_question(question: str, report_text: str):
     retrieval_query = f"""

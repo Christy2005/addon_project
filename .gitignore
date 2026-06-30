@@ -27,8 +27,7 @@ backend/uploads/
 # -----------------------------
 # Vector Database
 # -----------------------------
-faiss_index/
-vectorstore/
+
 chroma_db/
 *.faiss
 *.pkl
