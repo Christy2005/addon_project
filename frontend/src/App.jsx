@@ -1,122 +1,150 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
-import './App.css'
+import { useState } from "react";
+import axios from "axios";
+import "./App.css";
+import ReactMarkdown from "react-markdown";
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [file, setFile] = useState(null);
+  const [reportText, setReportText] = useState("");
+  const [question, setQuestion] = useState("");
+  const [answer, setAnswer] = useState("");
+  const [sources, setSources] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  const BACKEND = "http://127.0.0.1:8000";
+
+  async function uploadPDF() {
+    if (!file) {
+      alert("Select a PDF first.");
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    setLoading(true);
+
+    try {
+      const res = await axios.post(
+        `${BACKEND}/upload-report`,
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
+
+      setReportText(res.data.report_text);
+      alert("Report Uploaded Successfully!");
+    } catch (err) {
+      alert("Upload Failed");
+    }
+
+    setLoading(false);
+  }
+
+  async function askQuestion() {
+    if (question === "") {
+      alert("Enter a question.");
+      return;
+    }
+
+    if (reportText === "") {
+      alert("Upload a report first.");
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const res = await axios.post(`${BACKEND}/chat`, {
+        question: question,
+        report_text: reportText,
+      });
+
+      setAnswer(res.data.answer);
+      setSources(res.data.sources);
+    } catch (err) {
+      alert("Chat Failed");
+    }
+
+    setLoading(false);
+  }
 
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.jsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
+    <div className="container">
+
+      <h1>AI Health Report Diet Planner</h1>
+
+      <div className="card">
+
+        <h2>Upload Blood Report</h2>
+
+        <input
+          type="file"
+          accept=".pdf"
+          onChange={(e) => setFile(e.target.files[0])}
+        />
+
+        <button onClick={uploadPDF}>
+          Upload Report
         </button>
-      </section>
 
-      <div className="ticks"></div>
+      </div>
 
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
+      <div className="card">
+
+        <h2>Ask the AI</h2>
+
+        <textarea
+          rows="4"
+          placeholder="Ask something like 'Explain my report'"
+          value={question}
+          onChange={(e) => setQuestion(e.target.value)}
+        />
+
+        <button onClick={askQuestion}>
+          Ask
+        </button>
+
+      </div>
+
+      {loading && <h3>Processing...</h3>}
+
+      {answer && (
+
+        <div className="card">
+
+          <h2>AI Response</h2>
+
+          <ReactMarkdown>{answer}</ReactMarkdown>
         </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
 
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
-  )
+      )}
+
+      {sources.length > 0 && (
+
+        <div className="card">
+
+          <h2>Retrieved Sources (RAG)</h2>
+
+          {sources.map((source, index) => (
+
+            <div key={index} className="source">
+
+              {source}
+
+            </div>
+
+          ))}
+
+        </div>
+
+      )}
+
+    </div>
+  );
 }
 
-export default App
+export default App;

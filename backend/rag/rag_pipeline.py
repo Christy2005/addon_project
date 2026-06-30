@@ -14,8 +14,8 @@ from sentence_transformers import SentenceTransformer
 MODEL_NAME = "sentence-transformers/all-MiniLM-L6-v2"
 
 model = SentenceTransformer(MODEL_NAME)
-INDEX_PATH = "diet_index.faiss"
-DOCUMENTS_PATH = "documents.pkl"
+INDEX_PATH = "rag/diet_index.faiss"
+DOCUMENTS_PATH = "rag/documents.pkl"
 
 llm = ChatGroq(
     model="llama-3.3-70b-versatile",
@@ -24,38 +24,64 @@ llm = ChatGroq(
 )
 index = faiss.read_index(INDEX_PATH)
 
-prompt = ChatPromptTemplate.from_template(
-"""
+prompt = ChatPromptTemplate.from_template("""
 You are an AI Health Report Assistant.
 
 You are NOT a doctor.
 
-Your role is to explain blood report values and provide educational diet suggestions.
+Your purpose is to explain blood report values and provide educational diet suggestions.
 
-Use ONLY the retrieved nutrition context below.
+Use ONLY the retrieved nutrition context.
 
-Never diagnose diseases.
+Never diagnose diseases or prescribe medicines.
 
-If the information is unavailable, reply:
-
+If the retrieved information is insufficient, say:
 "I couldn't find enough information in the provided nutrition documents."
 
-Blood Report:
-
+-------------------------
+Blood Report
+-------------------------
 {report}
 
-Retrieved Nutrition Context:
-
+-------------------------
+Retrieved Nutrition Information
+-------------------------
 {context}
 
-Question:
-
+-------------------------
+User Question
+-------------------------
 {question}
 
-Answer:
-"""
+Give your answer in EXACTLY this format.
 
-)
+## Health Summary
+(2-3 lines)
+
+## Values That Need Attention
+- Marker:
+- Explanation:
+
+## Diet Recommendations
+
+### Breakfast
+- ...
+
+### Lunch
+- ...
+
+### Dinner
+- ...
+
+### Snacks
+- ...
+
+## Lifestyle Tips
+- ...
+
+## Disclaimer
+This response is for educational purposes only and is not a medical diagnosis.
+""")
 
 with open(DOCUMENTS_PATH, "rb") as f:
     documents = pickle.load(f)
