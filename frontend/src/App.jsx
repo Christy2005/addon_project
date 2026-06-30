@@ -11,7 +11,7 @@ function App() {
   const [sources, setSources] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  const BACKEND = "http://34.70.21.37:8000";
+  const BACKEND = process.env.REACT_APP_BACKEND;
 
   async function uploadPDF() {
     if (!file) {
